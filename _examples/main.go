@@ -1,14 +1,18 @@
 package main
 
 import (
-	"github.com/Kaey/framebuffer"
 	"fmt"
+	"github.com/Kaey/framebuffer"
+	"log"
 )
 
 func main() {
-	fb.Init()
+	fb, err := framebuffer.Init("/dev/fb0")
+	if err != nil {
+		log.Fatalln(err)
+	}
 	defer fb.Close()
-	fb.Clear()
-	fb.Write(1679, 1049, 255, 0, 0, 0)
+	fb.Clear(0, 0, 0, 0)
+	fb.WritePixel(200, 100, 255, 0, 0, 0)
 	fmt.Scanln()
 }

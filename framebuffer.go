@@ -1,5 +1,5 @@
 // Interface to linux framebuffer device.
-package fb
+package framebuffer
 
 import (
 	"os"
@@ -7,50 +7,74 @@ import (
 	"unsafe"
 )
 
-var (
-	fbdev   *os.File
-	finfo   FixedScreenInfo
-	vinfo   VariableScreenInfo
-	fbdata  []byte
-	fbdata2 []byte
-)
-
-func Write(x, y, red, green, blue, alpha int) {
-	offset := (int(vinfo.Xoffset)+x)*(int(vinfo.Bits_per_pixel)/8) + (int(vinfo.Yoffset)+y)*int(finfo.Line_length)
-	fbdata[offset] = byte(blue)
-	fbdata[offset+1] = byte(green)
-	fbdata[offset+2] = byte(red)
-	fbdata[offset+3] = byte(alpha)
+type Framebuffer struct {
+	dev      *os.File
+	finfo    fixedScreenInfo
+	vinfo    variableScreenInfo
+	data     []byte
+	restData []byte
 }
 
-func Init() {
-	fbdev, _ = os.OpenFile("/dev/fb0", os.O_RDWR, os.ModeDevice)
-	syscall.Syscall(syscall.SYS_IOCTL, fbdev.Fd(), GetFixedScreenInfo, uintptr(unsafe.Pointer(&finfo)))
-	syscall.Syscall(syscall.SYS_IOCTL, fbdev.Fd(), GetVariableScreenInfo, uintptr(unsafe.Pointer(&vinfo)))
-	fbdata, _ = syscall.Mmap(int(fbdev.Fd()), 0, int(finfo.Smem_len+uint32(finfo.Smem_start&4095)), ProtocolRead|ProtocolWrite, MapShared)
-	fbdata2 = make([]byte, len(fbdata))
-	for i := range fbdata {
-		fbdata2[i] = fbdata[i]
+func Init(dev string) (*Framebuffer, error) {
+	var (
+		fb    = new(Framebuffer)
+		err   error
+		errno syscall.Errno
+	)
+
+	fb.dev, err = os.OpenFile(dev, os.O_RDWR, os.ModeDevice)
+	if err != nil {
+		return nil, err
 	}
-}
 
-func Close() {
-	for i := range fbdata2 {
-		fbdata[i] = fbdata2[i]
+	_, _, errno = syscall.Syscall(syscall.SYS_IOCTL, fb.dev.Fd(), getFixedScreenInfo, uintptr(unsafe.Pointer(&fb.finfo)))
+	if errno != 0 {
+		return nil, errno
 	}
-	fbdev.Close()
-	syscall.Munmap(fbdata)
+
+	_, _, errno = syscall.Syscall(syscall.SYS_IOCTL, fb.dev.Fd(), getVariableScreenInfo, uintptr(unsafe.Pointer(&fb.vinfo)))
+	if errno != 0 {
+		return nil, errno
+	}
+
+	fb.data, err = syscall.Mmap(int(fb.dev.Fd()), 0, int(fb.finfo.Smem_len+uint32(fb.finfo.Smem_start&uint64(syscall.Getpagesize()-1))), protocolRead|protocolWrite, mapShared)
+	if err != nil {
+		return nil, err
+	}
+
+	fb.restData = make([]byte, len(fb.data))
+	for i := range fb.data {
+		fb.restData[i] = fb.data[i]
+	}
+
+	return fb, nil
 }
 
-func Clear() {
-	w, h := Size()
+func (fb *Framebuffer) WritePixel(x, y, red, green, blue, alpha int) {
+	offset := (int(fb.vinfo.Xoffset)+x)*(int(fb.vinfo.Bits_per_pixel)/8) + (int(fb.vinfo.Yoffset)+y)*int(fb.finfo.Line_length)
+	fb.data[offset] = byte(blue)
+	fb.data[offset+1] = byte(green)
+	fb.data[offset+2] = byte(red)
+	fb.data[offset+3] = byte(alpha)
+}
+
+func (fb *Framebuffer) Close() {
+	for i := range fb.restData {
+		fb.data[i] = fb.restData[i]
+	}
+	syscall.Munmap(fb.data)
+	fb.dev.Close()
+}
+
+func (fb *Framebuffer) Clear(red, green, blue, alpha int) {
+	w, h := fb.Size()
 	for i := 0; i < w; i++ {
 		for j := 0; j < h; j++ {
-			Write(i, j, 0, 0, 0, 0)
+			fb.WritePixel(i, j, red, green, blue, alpha)
 		}
 	}
 }
 
-func Size() (width, height int) {
-	return int(vinfo.Xres), int(vinfo.Yres)
+func (fb *Framebuffer) Size() (width, height int) {
+	return int(fb.vinfo.Xres), int(fb.vinfo.Yres)
 }

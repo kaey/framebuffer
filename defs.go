@@ -1,9 +1,9 @@
 // Created by cgo -godefs - DO NOT EDIT
-// cgo -godefs _godefs-source.go
+// cgo -godefs _defs-source.go
 
-package fb
+package framebuffer
 
-type FixedScreenInfo struct {
+type fixedScreenInfo struct {
 	Id           [16]int8
 	Smem_start   uint64
 	Smem_len     uint32
@@ -23,7 +23,7 @@ type FixedScreenInfo struct {
 	Reserved     [2]uint16
 	Pad_cgo_2    [2]byte
 }
-type VariableScreenInfo struct {
+type variableScreenInfo struct {
 	Xres           uint32
 	Yres           uint32
 	Xres_virtual   uint32
@@ -32,10 +32,10 @@ type VariableScreenInfo struct {
 	Yoffset        uint32
 	Bits_per_pixel uint32
 	Grayscale      uint32
-	Red            BitField
-	Green          BitField
-	Blue           BitField
-	Transp         BitField
+	Red            bitField
+	Green          bitField
+	Blue           bitField
+	Transp         bitField
 	Nonstd         uint32
 	Activate       uint32
 	Height         uint32
@@ -54,19 +54,19 @@ type VariableScreenInfo struct {
 	Colorspace     uint32
 	Reserved       [4]uint32
 }
-type BitField struct {
+type bitField struct {
 	Offset uint32
 	Length uint32
 	Right  uint32
 }
 
 const (
-	GetFixedScreenInfo    uintptr = 0x4602
-	GetVariableScreenInfo uintptr = 0x4600
+	getFixedScreenInfo    uintptr = 0x4602
+	getVariableScreenInfo uintptr = 0x4600
 )
 
 const (
-	ProtocolRead  int = 0x1
-	ProtocolWrite int = 0x2
-	MapShared     int = 0x1
+	protocolRead  int = 0x1
+	protocolWrite int = 0x2
+	mapShared     int = 0x1
 )
