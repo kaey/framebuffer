@@ -1,4 +1,8 @@
-// Interface to linux framebuffer device.
+// Copyright 2013 Konstantin Kulikov. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+// Package framebuffer is an interface to linux framebuffer device.
 package framebuffer
 
 import (
@@ -7,6 +11,7 @@ import (
 	"unsafe"
 )
 
+// Framebuffer contains information about framebuffer.
 type Framebuffer struct {
 	dev      *os.File
 	finfo    fixedScreenInfo
@@ -15,6 +20,7 @@ type Framebuffer struct {
 	restData []byte
 }
 
+// Init opens framebuffer device, maps it to memory and saves its current contents.
 func Init(dev string) (*Framebuffer, error) {
 	var (
 		fb    = new(Framebuffer)
@@ -50,14 +56,7 @@ func Init(dev string) (*Framebuffer, error) {
 	return fb, nil
 }
 
-func (fb *Framebuffer) WritePixel(x, y, red, green, blue, alpha int) {
-	offset := (int(fb.vinfo.Xoffset)+x)*(int(fb.vinfo.Bits_per_pixel)/8) + (int(fb.vinfo.Yoffset)+y)*int(fb.finfo.Line_length)
-	fb.data[offset] = byte(blue)
-	fb.data[offset+1] = byte(green)
-	fb.data[offset+2] = byte(red)
-	fb.data[offset+3] = byte(alpha)
-}
-
+// Close closes framebuffer device and restores its contents.
 func (fb *Framebuffer) Close() {
 	for i := range fb.restData {
 		fb.data[i] = fb.restData[i]
@@ -66,6 +65,16 @@ func (fb *Framebuffer) Close() {
 	fb.dev.Close()
 }
 
+// WritePixel changes pixel at x, y to specified color.
+func (fb *Framebuffer) WritePixel(x, y, red, green, blue, alpha int) {
+	offset := (int(fb.vinfo.Xoffset)+x)*(int(fb.vinfo.Bits_per_pixel)/8) + (int(fb.vinfo.Yoffset)+y)*int(fb.finfo.Line_length)
+	fb.data[offset] = byte(blue)
+	fb.data[offset+1] = byte(green)
+	fb.data[offset+2] = byte(red)
+	fb.data[offset+3] = byte(alpha)
+}
+
+// Clear fills screen with specified color
 func (fb *Framebuffer) Clear(red, green, blue, alpha int) {
 	w, h := fb.Size()
 	for i := 0; i < w; i++ {
@@ -75,6 +84,7 @@ func (fb *Framebuffer) Clear(red, green, blue, alpha int) {
 	}
 }
 
+// Size returns dimensions of a framebuffer.
 func (fb *Framebuffer) Size() (width, height int) {
 	return int(fb.vinfo.Xres), int(fb.vinfo.Yres)
 }

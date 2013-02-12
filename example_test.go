@@ -1,4 +1,8 @@
-package main
+// Copyright 2013 Konstantin Kulikov. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+package framebuffer_test
 
 import (
 	"fmt"
@@ -6,7 +10,7 @@ import (
 	"log"
 )
 
-func main() {
+func Example() {
 	fb, err := framebuffer.Init("/dev/fb0")
 	if err != nil {
 		log.Fatalln(err)
