@@ -6,8 +6,9 @@ package framebuffer_test
 
 import (
 	"fmt"
-	"github.com/Kaey/framebuffer"
 	"log"
+
+	"github.com/Kaey/framebuffer"
 )
 
 func Example() {

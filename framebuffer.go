@@ -23,8 +23,8 @@ type Framebuffer struct {
 // Init opens framebuffer device, maps it to memory and saves its current contents.
 func Init(dev string) (*Framebuffer, error) {
 	var (
-		fb    = new(Framebuffer)
-		err   error
+		fb  = new(Framebuffer)
+		err error
 	)
 
 	fb.dev, err = os.OpenFile(dev, os.O_RDWR, os.ModeDevice)
@@ -34,19 +34,19 @@ func Init(dev string) (*Framebuffer, error) {
 
 	err = ioctl(fb.dev.Fd(), getFixedScreenInfo, unsafe.Pointer(&fb.finfo))
 	if err != nil {
-        fb.dev.Close()
+		fb.dev.Close()
 		return nil, err
 	}
 
 	err = ioctl(fb.dev.Fd(), getVariableScreenInfo, unsafe.Pointer(&fb.vinfo))
 	if err != nil {
-        fb.dev.Close()
+		fb.dev.Close()
 		return nil, err
 	}
 
 	fb.data, err = syscall.Mmap(int(fb.dev.Fd()), 0, int(fb.finfo.Smem_len+uint32(fb.finfo.Smem_start&uint64(syscall.Getpagesize()-1))), protocolRead|protocolWrite, mapShared)
 	if err != nil {
-        fb.dev.Close()
+		fb.dev.Close()
 		return nil, err
 	}
 
@@ -92,9 +92,9 @@ func (fb *Framebuffer) Size() (width, height int) {
 }
 
 func ioctl(fd uintptr, cmd uintptr, data unsafe.Pointer) error {
-        _, _, errno := syscall.Syscall(syscall.SYS_IOCTL, fd, cmd, uintptr(data))
-        if errno != 0 {
-            return os.NewSyscallError("IOCTL", errno)
-        }
-        return nil
+	_, _, errno := syscall.Syscall(syscall.SYS_IOCTL, fd, cmd, uintptr(data))
+	if errno != 0 {
+		return os.NewSyscallError("IOCTL", errno)
+	}
+	return nil
 }
