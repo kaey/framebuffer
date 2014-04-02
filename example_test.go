@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/Kaey/framebuffer"
+	"github.com/kaey/framebuffer"
 )
 
 func Example() {
